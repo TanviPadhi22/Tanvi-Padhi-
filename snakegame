@@ -1,0 +1,114 @@
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+
+public class SimpleSnakeGame extends JPanel implements ActionListener {
+    private final int TILE_SIZE = 20;
+    private final int WIDTH = 300, HEIGHT = 300;
+    private final int DELAY = 100;
+    private int[] x = new int[WIDTH * HEIGHT];
+    private int[] y = new int[WIDTH * HEIGHT];
+    private int snakeLength = 3, foodX, foodY, direction = KeyEvent.VK_RIGHT;
+    private boolean inGame = true;
+    private Timer timer;
+
+    public SimpleSnakeGame() {
+        setPreferredSize(new Dimension(WIDTH, HEIGHT));
+        setBackground(Color.black);
+        setFocusable(true);
+        addKeyListener(new KeyAdapter() {
+            public void keyPressed(KeyEvent e) {
+                int key = e.getKeyCode();
+                if (key == KeyEvent.VK_LEFT && direction != KeyEvent.VK_RIGHT) direction = KeyEvent.VK_LEFT;
+                if (key == KeyEvent.VK_RIGHT && direction != KeyEvent.VK_LEFT) direction = KeyEvent.VK_RIGHT;
+                if (key == KeyEvent.VK_UP && direction != KeyEvent.VK_DOWN) direction = KeyEvent.VK_UP;
+                if (key == KeyEvent.VK_DOWN && direction != KeyEvent.VK_UP) direction = KeyEvent.VK_DOWN;
+            }
+        });
+        initGame();
+    }
+
+    private void initGame() {
+        for (int i = 0; i < snakeLength; i++) {
+            x[i] = 100 - i * TILE_SIZE;
+            y[i] = 100;
+        }
+        locateFood();
+        timer = new Timer(DELAY, this);
+        timer.start();
+    }
+
+    private void locateFood() {
+        foodX = (int) (Math.random() * (WIDTH / TILE_SIZE)) * TILE_SIZE;
+        foodY = (int) (Math.random() * (HEIGHT / TILE_SIZE)) * TILE_SIZE;
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        if (inGame) {
+            move();
+            checkFood();
+            checkCollision();
+            repaint();
+        }
+    }
+
+    private void move() {
+        for (int i = snakeLength; i > 0; i--) {
+            x[i] = x[i - 1];
+            y[i] = y[i - 1];
+        }
+        if (direction == KeyEvent.VK_LEFT) x[0] -= TILE_SIZE;
+        if (direction == KeyEvent.VK_RIGHT) x[0] += TILE_SIZE;
+        if (direction == KeyEvent.VK_UP) y[0] -= TILE_SIZE;
+        if (direction == KeyEvent.VK_DOWN) y[0] += TILE_SIZE;
+    }
+
+    private void checkFood() {
+        if (x[0] == foodX && y[0] == foodY) {
+            snakeLength++;
+            locateFood();
+        }
+    }
+
+    private void checkCollision() {
+        for (int i = snakeLength; i > 0; i--) {
+            if (x[i] == x[0] && y[i] == y[0]) inGame = false;
+        }
+        if (x[0] < 0 || x[0] >= WIDTH || y[0] < 0 || y[0] >= HEIGHT) inGame = false;
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        if (inGame) {
+            g.setColor(Color.red);
+            g.fillRect(foodX, foodY, TILE_SIZE, TILE_SIZE);
+            for (int i = 0; i < snakeLength; i++) {
+                g.setColor(i == 0 ? Color.green : Color.yellow);
+                g.fillRect(x[i], y[i], TILE_SIZE, TILE_SIZE);
+            }
+        } else {
+            gameOver(g);
+        }
+    }
+
+    private void gameOver(Graphics g) {
+        String msg = "Game Over";
+        Font font = new Font("Helvetica", Font.BOLD, 30);
+        FontMetrics metrics = getFontMetrics(font);
+        g.setColor(Color.white);
+        g.setFont(font);
+        g.drawString(msg, (WIDTH - metrics.stringWidth(msg)) / 2, HEIGHT / 2);
+    }
+
+    public static void main(String[] args) {
+        JFrame frame = new JFrame();
+        SimpleSnakeGame game = new SimpleSnakeGame();
+        frame.add(game);
+        frame.pack();
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setVisible(true);
+    }
+}
+
